@@ -1,0 +1,6 @@
+# client
+public/
+# config file
+*.json
+
+.vscode
