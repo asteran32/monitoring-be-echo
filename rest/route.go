@@ -18,7 +18,8 @@ func RunAPIWithHandler() {
 	e.Use(middleware.Logger()) // Log all request log
 	e.Use(middleware.Recover())
 
-	// e.Use(middleware.CORSWithConfig(middleware.CORSConfig{ //CORS Middleware
+	//CORS Middleware
+	// e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
 	// 	AllowOrigins: []string{"*"},
 	// 	AllowMethods: []string{http.MethodGet, http.MethodPut, http.MethodPost, http.MethodDelete},
 	// }))
@@ -28,13 +29,13 @@ func RunAPIWithHandler() {
 	// Default behavior when using with non root URL(refresh, reload etc) paths is to append the URL path to filesystem path
 	// For example, when an incoming request comes for '/somepath' the actual filesystem request goes to 'filesystempath/somepath instead of only 'filesystempath'
 	e.Use(middleware.StaticWithConfig(middleware.StaticConfig{
-		Root:   "public/build",
+		Root:   "build",
 		Index:  "index.html",
 		Browse: false,
 		HTML5:  true,
 	}))
 
-	// Router List
+	// Router
 	user := e.Group("/user")
 	{
 		user.POST("/signin", h.SignIn)
@@ -43,21 +44,21 @@ func RunAPIWithHandler() {
 
 	monitor := e.Group("/monitor")
 	{
-		monitor.GET("/cams/:id/rtsp", h.StreamRTSP) //
 		monitor.GET("/cams", h.GetAllCam)
-		monitor.GET("/cams/:id", h.GetCam)
 		monitor.POST("/cams", h.AddNewCam)
-		monitor.DELETE("/cams", h.DeleteCam)
+		monitor.GET("/cams/:id", h.GetCurrentCam)
+		monitor.DELETE("/cams/:id", h.DeleteCurrentCam)
+		monitor.GET("/stream/:id", h.StreamRTSP)
 
 	}
 
-	opcua := e.Group("/opcua")
+	opcua := e.Group("/server")
 	{
-		opcua.GET("/client/:id/analysis", h.MonitoringOpcUA) //
+		// opcua.GET("/stream/:id", h.MonitoringOpcUA) //-> client/:id랑 병합
 		opcua.GET("/client", h.GetAllServer)
-		opcua.GET("/client/:id", h.GetServer)
 		opcua.POST("/client", h.AddNewServer)
-		opcua.DELETE("/client", h.DeleteServer)
+		opcua.GET("/client/:id", h.GetCurrentServer)
+		opcua.DELETE("/client/:id", h.DeleteCurrentServer)
 	}
 
 	// Start server

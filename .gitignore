@@ -1,6 +1,8 @@
 # client
-public/
+build/
 # config file
 *.json
 
 .vscode
+
+*.h264

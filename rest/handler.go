@@ -28,15 +28,15 @@ type HandlerInterface interface {
 	// cameras
 	StreamRTSP(c echo.Context) error
 	AddNewCam(c echo.Context) error
-	DeleteCam(c echo.Context) error
 	GetAllCam(c echo.Context) error
-	GetCam(c echo.Context) error
+	DeleteCurrentCam(c echo.Context) error
+	GetCurrentCam(c echo.Context) error
 	// opcua servers
 	MonitoringOpcUA(c echo.Context) error
 	AddNewServer(c echo.Context) error
-	DeleteServer(c echo.Context) error
 	GetAllServer(c echo.Context) error
-	GetServer(c echo.Context) error
+	GetCurrentServer(c echo.Context) error
+	DeleteCurrentServer(c echo.Context) error
 }
 
 func NewHandler() (HandlerInterface, error) {
@@ -97,22 +97,21 @@ func (h *Handler) StreamRTSP(c echo.Context) error {
 	if h.db == nil {
 		return c.JSON(http.StatusInternalServerError, "server database error")
 	}
-
-	cams, err := h.db.GetAllCam()
-	if err != nil || len(cams) == 0 {
-		return c.JSON(http.StatusBadRequest, err.Error())
+	param := c.Param("id")
+	// websocket
+	cam, err := h.db.GetCamByID(param)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, err.Error())
 	}
 
-	// websocket
 	unSafeconn, err := upgrader.Upgrade(c.Response(), c.Request(), nil)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, err)
 	}
 	ws := &service.ThreadSafeWriter{Conn: unSafeconn}
+	go ws.WebRTCStreamH264(cam.Rtsp) // controller 보내기
 
-	go ws.WebRTCStreamH264() // controller 보내기
-
-	return c.JSON(http.StatusOK, cams)
+	return c.JSON(http.StatusOK, "Ready to stream")
 }
 
 // Add RTSP Camera
@@ -134,17 +133,13 @@ func (h *Handler) AddNewCam(c echo.Context) error {
 }
 
 // Delete RTSP Camera
-func (h *Handler) DeleteCam(c echo.Context) error {
+func (h *Handler) DeleteCurrentCam(c echo.Context) error {
 	if h.db == nil {
 		return c.JSON(http.StatusInternalServerError, "server database error")
 	}
+	param := c.Param("id")
 
-	var cam model.Camera
-	if err := c.Bind(&cam); err != nil {
-		return c.JSON(http.StatusBadRequest, err.Error())
-	}
-
-	if err := h.db.DeleteCam(cam.Name); err != nil {
+	if err := h.db.DeleteCam(param); err != nil {
 		return c.JSON(http.StatusInternalServerError, err.Error())
 	}
 
@@ -152,7 +147,7 @@ func (h *Handler) DeleteCam(c echo.Context) error {
 }
 
 // Get RTSP Camera Information
-func (h *Handler) GetCam(c echo.Context) error {
+func (h *Handler) GetCurrentCam(c echo.Context) error {
 	if h.db == nil {
 		return c.JSON(http.StatusInternalServerError, "server database error")
 	}
@@ -220,17 +215,13 @@ func (h *Handler) AddNewServer(c echo.Context) error {
 }
 
 // Delete OPC UA Server
-func (h *Handler) DeleteServer(c echo.Context) error {
+func (h *Handler) DeleteCurrentServer(c echo.Context) error {
 	if h.db == nil {
 		return c.JSON(http.StatusInternalServerError, "server database error")
 	}
+	param := c.Param("id")
 
-	var opc model.OpcUAServer
-	if err := c.Bind(&opc); err != nil {
-		return c.JSON(http.StatusBadRequest, err.Error())
-	}
-
-	if err := h.db.DeleteServer(opc.Name); err != nil {
+	if err := h.db.DeleteServer(param); err != nil {
 		return c.JSON(http.StatusInternalServerError, err.Error())
 	}
 
@@ -238,7 +229,7 @@ func (h *Handler) DeleteServer(c echo.Context) error {
 }
 
 // Get OPC UA Server
-func (h *Handler) GetServer(c echo.Context) error {
+func (h *Handler) GetCurrentServer(c echo.Context) error {
 	if h.db == nil {
 		return c.JSON(http.StatusInternalServerError, "server database error")
 	}
