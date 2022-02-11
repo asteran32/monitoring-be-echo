@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
 	"log"
 	"os/exec"
@@ -42,7 +41,6 @@ var (
 
 func (t *ThreadSafeWriter) WebRTCStreamH264(rtsp_url string) error {
 	defer t.Conn.Close()
-	fmt.Println(rtsp_url)
 
 	peerConnection, err := webrtc.NewPeerConnection(webrtc.Configuration{})
 	if err != nil {
@@ -105,7 +103,7 @@ func (t *ThreadSafeWriter) WebRTCStreamH264(rtsp_url string) error {
 
 	go func() {
 		// Open a H264 file and start reading using our IVFReader
-		cmd := exec.Command("ffmpeg", "-i", test_video, "-c:v", "libx264",
+		cmd := exec.Command("ffmpeg", "-i", rtsp_url, "-c:v", "libx264",
 			"-an", "-bsf:v", "h264_mp4toannexb", "-b:v", "2M", "-max_delay", "0",
 			"-bf", "0", "-f", "h264", "pipe:1")
 

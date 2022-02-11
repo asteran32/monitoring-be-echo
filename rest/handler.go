@@ -4,6 +4,7 @@ import (
 	"app/db"
 	"app/model"
 	"app/service"
+	"fmt"
 	"net/http"
 
 	"github.com/gorilla/websocket"
@@ -58,16 +59,15 @@ func (h *Handler) SignIn(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, err.Error())
 	}
 
-	customer, err := h.db.UserSignIn(user.Email, user.Password)
+	user, err := h.db.UserSignIn(user.Email, user.Password)
 	if err != nil {
 		if err == db.ErrINVALIDPASSWORD {
 			return c.JSON(http.StatusForbidden, err.Error())
 		}
-
 		return c.JSON(http.StatusInternalServerError, err.Error())
 	}
-
-	return c.JSON(http.StatusOK, customer)
+	fmt.Println(user)
+	return c.JSON(http.StatusOK, user)
 }
 
 // User Sign up
